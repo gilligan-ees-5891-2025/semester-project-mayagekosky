@@ -85,16 +85,16 @@ qqnorm(data_vals_qtz_mon)
 qqline(data_vals_qtz_mon, col = "cyan4", lwd = 2)
 
 #making a q-q plot for fine-grained granite samples
-data_vals_fgg <- as.numeric(df$`...2`[c(11, 14, 15, 16)])  # use your column & rows
+data_vals_fgg <- as.numeric(df$`...2`[c(11, 14, 15, 16)])
 
 qqnorm(data_vals_fgg)
 qqline(data_vals_fgg, col = "purple4", lwd = 2)
 
 #making a q-q plot for intermediate samples
-data_vals_fgg <- as.numeric(df$`...2`[c(8, 10, 13, 17)])  # use your column & rows
+data_vals_int <- as.numeric(df$`...2`[c(8, 10, 13, 17)])  # use your column & rows
 
-qqnorm(data_vals_fgg)
-qqline(data_vals_fgg, col = "magenta4", lwd = 2)
+qqnorm(data_vals_int)
+qqline(data_vals_int, col = "magenta4", lwd = 2)
 ```
 
 ## Research Questions
@@ -165,7 +165,7 @@ Al2O3_Plot <- ggplot(df_combined_Al, aes(x = SiO2, y = Al2O3, color = units)) +
     ),
     color = "grey28", linewidth = 0.8
   ) +
-   geom_point(data = df_combined |> filter(units != "fgg (avg)"), size = 3) +
+   geom_point(data = df_combined_Al |> filter(units != "fgg (avg)"), size = 3) +
  geom_smooth(
   data = df_combined_Al |>
     filter(!units %in% c("fgg", "fgg (avg)", "int", "qtz_mon")),
@@ -765,7 +765,7 @@ P2O5_Plot <- ggplot(df_combined_P, aes(x = SiO2, y = P2O5, color = units)) +
   theme_bw() +
   ggtitle("Harker Diagram: SiO2 vs P2O5\n(with fgg averaged)")
 
-
+P2O5_Plot
 ```
 
 ### Results and Discussion
