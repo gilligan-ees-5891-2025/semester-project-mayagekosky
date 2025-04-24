@@ -149,7 +149,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Also, you add the interactive “view” command, but this is something for interactive use, and isn’t suitable for building into a document with Quarto.</p>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r professor code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)</span>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>cols <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"hiko_geochem.xlsx"</span>, <span class="at">skip =</span> <span class="dv">2</span>, <span class="at">n_max =</span> <span class="dv">0</span>, </span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">.name_repair =</span> <span class="st">"universal"</span>) <span class="sc">|&gt;</span> </span>
@@ -159,7 +159,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>                 <span class="at">col_names =</span> <span class="fu">names</span>(cols))</span>
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(df, <span class="at">width=</span><span class="dv">60</span>) <span class="co"># tells us how many rows and columns there are. </span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre class="professor"><code>Rows: 13
+<pre class="prof-out"><code>Rows: 13
 Columns: 56
 $ sample &lt;chr&gt; "HCM04-C2", "HCM04-E1", "HCM04-E2", "HCM04-…
 $ SiO2   &lt;dbl&gt; 65.57607, 59.13234, 66.72044, 50.16636, 66.…
@@ -242,53 +242,67 @@ $ U      &lt;dbl&gt; 1.80, 0.93, 0.79, 0.47, 1.08, 0.95, 0.91, 1…</code></pre>
 <p>I’m putting some different code below, just because the code I changed for reading in the data has five fewer rows at the top of <code>df</code></p>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r professor code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># I am adding a column to associate my samples with each of their determined rock unit. Abbreviations are as follows: qtz_mon = quartz monzonite, di = diorite, int = intermediate, di_amp = amphibole-rich diorite, and fgg = fine-grained granite. </span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>units <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"qtz_mon"</span>, <span class="st">"di"</span>, <span class="st">"int"</span>, <span class="st">"di_amp"</span>, <span class="st">"int"</span>, <span class="st">"fgg"</span>, <span class="st">"qtz_mon"</span>, <span class="st">"int"</span>, <span class="st">"fgg"</span>, <span class="st">"fgg"</span>, <span class="st">"fgg"</span>, <span class="st">"int"</span>, <span class="st">"qtz_mon"</span>)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># rearranging my new column to the front so it's easier to view next to my samples.</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">relocate</span>(df, sample, units)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># I am adding a column to associate my samples with each of their </span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># determined rock unit. Abbreviations are as follows: </span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   qtz_mon = quartz monzonite, </span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co">#   di = diorite, </span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co">#   int = intermediate, </span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co">#   di_amp = amphibole-rich diorite, </span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co">#   and fgg = fine-grained granite. </span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>units <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"qtz_mon"</span>, <span class="st">"di"</span>, <span class="st">"int"</span>, <span class="st">"di_amp"</span>, <span class="st">"int"</span>, <span class="st">"fgg"</span>, </span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>              <span class="st">"qtz_mon"</span>, <span class="st">"int"</span>, <span class="st">"fgg"</span>, <span class="st">"fgg"</span>, <span class="st">"fgg"</span>, <span class="st">"int"</span>, </span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>              <span class="st">"qtz_mon"</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="co"># rearranging my new column to the front so it's easier to view next to </span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co"># my samples.</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">relocate</span>(df, sample, units)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Now I will calculate the average compositions and their standard deviations for each unit’s silica composition. I will only be doing this for 3 of my units since, the diorite and amphibole-rich diorite only have one sample each.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># finding the average and standard deviation for silica in quartz monzonite</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">as.numeric</span>(df[<span class="fu">c</span>(<span class="dv">6</span>, <span class="dv">12</span>, <span class="dv">18</span>),] [[<span class="st">"...2"</span>]]), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sd</span>(<span class="fu">as.numeric</span>(df<span class="sc">$</span><span class="st">`</span><span class="at">...2</span><span class="st">`</span>[<span class="fu">c</span>(<span class="dv">6</span>, <span class="dv">12</span>, <span class="dv">18</span>)]), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co"># finding the average and standard deviation for silica in fine-grained granite</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">as.numeric</span>(df[<span class="fu">c</span>(<span class="dv">11</span>, <span class="dv">14</span>, <span class="dv">15</span>, <span class="dv">16</span>),] [[<span class="st">"...2"</span>]]), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="fu">sd</span>(<span class="fu">as.numeric</span>(df<span class="sc">$</span><span class="st">`</span><span class="at">...2</span><span class="st">`</span>[<span class="fu">c</span>(<span class="dv">11</span>, <span class="dv">14</span>, <span class="dv">15</span>, <span class="dv">16</span>)]), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co"># finding the average and standard deviation for silica in the intermediates</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">as.numeric</span>(df[<span class="fu">c</span>(<span class="dv">8</span>, <span class="dv">10</span>, <span class="dv">13</span>, <span class="dv">17</span>),] [[<span class="st">"...2"</span>]]), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="fu">sd</span>(<span class="fu">as.numeric</span>(df<span class="sc">$</span><span class="st">`</span><span class="at">...2</span><span class="st">`</span>[<span class="fu">c</span>(<span class="dv">8</span>, <span class="dv">10</span>, <span class="dv">13</span>, <span class="dv">17</span>)]), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># finding the average and standard deviation for silica in </span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># quartz monzonite</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">as.numeric</span>(df[<span class="fu">c</span>(<span class="dv">6</span>, <span class="dv">12</span>, <span class="dv">18</span>),] [[<span class="st">"...2"</span>]]), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sd</span>(<span class="fu">as.numeric</span>(df<span class="sc">$</span><span class="st">`</span><span class="at">...2</span><span class="st">`</span>[<span class="fu">c</span>(<span class="dv">6</span>, <span class="dv">12</span>, <span class="dv">18</span>)]), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co"># finding the average and standard deviation for silica in </span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># fine-grained granite</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">as.numeric</span>(df[<span class="fu">c</span>(<span class="dv">11</span>, <span class="dv">14</span>, <span class="dv">15</span>, <span class="dv">16</span>),] [[<span class="st">"...2"</span>]]), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="fu">sd</span>(<span class="fu">as.numeric</span>(df<span class="sc">$</span><span class="st">`</span><span class="at">...2</span><span class="st">`</span>[<span class="fu">c</span>(<span class="dv">11</span>, <span class="dv">14</span>, <span class="dv">15</span>, <span class="dv">16</span>)]), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="co"># finding the average and standard deviation for silica in the </span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co"># intermediates</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">as.numeric</span>(df[<span class="fu">c</span>(<span class="dv">8</span>, <span class="dv">10</span>, <span class="dv">13</span>, <span class="dv">17</span>),] [[<span class="st">"...2"</span>]]), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="fu">sd</span>(<span class="fu">as.numeric</span>(df<span class="sc">$</span><span class="st">`</span><span class="at">...2</span><span class="st">`</span>[<span class="fu">c</span>(<span class="dv">8</span>, <span class="dv">10</span>, <span class="dv">13</span>, <span class="dv">17</span>)]), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="comment">
 <p>What you do works, but this is an easier way to do it</p>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r professor code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># standard deviation for silica in quartz monzonite </span></span>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># standard deviation for silica in quartz monzonite </span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>df <span class="sc">|&gt;</span> <span class="fu">filter</span>(units <span class="sc">==</span> <span class="st">"qtz_mon"</span>) <span class="sc">|&gt;</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">mean =</span> <span class="fu">mean</span>(SiO2), <span class="at">sd =</span> <span class="fu">sd</span>(SiO2))  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre class="professor"><code># A tibble: 1 × 2
+<pre class="prof-out"><code># A tibble: 1 × 2
    mean    sd
   &lt;dbl&gt; &lt;dbl&gt;
 1  68.1  2.53</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r professor code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># finding the average and standard deviation for silica in fine-grained granite </span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>df <span class="sc">|&gt;</span> <span class="fu">filter</span>(units <span class="sc">==</span> <span class="st">"fgg"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">mean =</span> <span class="fu">mean</span>(SiO2), <span class="at">sd =</span> <span class="fu">sd</span>(SiO2))  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># finding the average and standard deviation for silica in </span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># fine-grained granite </span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>df <span class="sc">|&gt;</span> <span class="fu">filter</span>(units <span class="sc">==</span> <span class="st">"fgg"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">mean =</span> <span class="fu">mean</span>(SiO2), <span class="at">sd =</span> <span class="fu">sd</span>(SiO2))  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre class="professor"><code># A tibble: 1 × 2
+<pre class="prof-out"><code># A tibble: 1 × 2
    mean    sd
   &lt;dbl&gt; &lt;dbl&gt;
 1  72.1 0.400</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r professor code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># finding the average and standard deviation for silica in the intermediates </span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>df <span class="sc">|&gt;</span> <span class="fu">filter</span>(units <span class="sc">==</span> <span class="st">"int"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">mean =</span> <span class="fu">mean</span>(SiO2), <span class="at">sd =</span> <span class="fu">sd</span>(SiO2)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># finding the average and standard deviation for silica in the </span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co"># intermediates </span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>df <span class="sc">|&gt;</span> <span class="fu">filter</span>(units <span class="sc">==</span> <span class="st">"int"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">mean =</span> <span class="fu">mean</span>(SiO2), <span class="at">sd =</span> <span class="fu">sd</span>(SiO2)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre class="professor"><code># A tibble: 1 × 2
+<pre class="prof-out"><code># A tibble: 1 × 2
    mean    sd
   &lt;dbl&gt; &lt;dbl&gt;
 1  66.4  1.55</code></pre>
@@ -298,10 +312,10 @@ $ U      &lt;dbl&gt; 1.80, 0.93, 0.79, 0.47, 1.08, 0.95, 0.91, 1…</code></pre>
 <p>Or you could do this</p>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r professor code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>df <span class="sc">|&gt;</span> <span class="fu">filter</span>(units <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"qtz_mon"</span>, <span class="st">"fgg"</span>, <span class="st">"int"</span>)) <span class="sc">|&gt;</span></span>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>df <span class="sc">|&gt;</span> <span class="fu">filter</span>(units <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"qtz_mon"</span>, <span class="st">"fgg"</span>, <span class="st">"int"</span>)) <span class="sc">|&gt;</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">mean =</span> <span class="fu">mean</span>(SiO2), <span class="at">sd =</span> <span class="fu">sd</span>(SiO2), <span class="at">.by =</span> <span class="st">"units"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre class="professor"><code># A tibble: 3 × 3
+<pre class="prof-out"><code># A tibble: 3 × 3
   units    mean    sd
   &lt;chr&gt;   &lt;dbl&gt; &lt;dbl&gt;
 1 qtz_mon  68.1 2.53 
@@ -337,7 +351,7 @@ $ U      &lt;dbl&gt; 1.80, 0.93, 0.79, 0.47, 1.08, 0.95, 0.91, 1…</code></pre>
 <p>Also, here’s an easier way to do your Q-Q plots</p>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r professor code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># making a q-q plot for quartz monzonite samples</span></span>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># making a q-q plot for quartz monzonite samples</span></span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>data_vals_qtz_mon <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span> <span class="fu">filter</span>(units <span class="sc">==</span> <span class="st">"qtz_mon"</span>) <span class="sc">|&gt;</span> <span class="fu">pull</span>(SiO2)</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="fu">qqnorm</span>(data_vals_qtz_mon)</span>
@@ -349,7 +363,7 @@ $ U      &lt;dbl&gt; 1.80, 0.93, 0.79, 0.47, 1.08, 0.95, 0.91, 1…</code></pre>
 </figure>
 </div>
 </div>
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r professor code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># making a q-q plot for fine-grained granite samples</span></span>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># making a q-q plot for fine-grained granite samples</span></span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>data_vals_fgg <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span> <span class="fu">filter</span>(units <span class="sc">==</span> <span class="st">"fgg"</span>) <span class="sc">|&gt;</span> <span class="fu">pull</span>(SiO2)</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="fu">qqnorm</span>(data_vals_fgg)</span>
@@ -361,7 +375,7 @@ $ U      &lt;dbl&gt; 1.80, 0.93, 0.79, 0.47, 1.08, 0.95, 0.91, 1…</code></pre>
 </figure>
 </div>
 </div>
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r professor code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># making a q-q plot for intermediate samples</span></span>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># making a q-q plot for intermediate samples</span></span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>data_vals_int <span class="ot">&lt;-</span>  df <span class="sc">|&gt;</span> <span class="fu">filter</span>(units <span class="sc">==</span> <span class="st">"int"</span>) <span class="sc">|&gt;</span> <span class="fu">pull</span>(SiO2)</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="fu">qqnorm</span>(data_vals_int)</span>
@@ -1043,20 +1057,20 @@ $ U      &lt;dbl&gt; 1.80, 0.93, 0.79, 0.47, 1.08, 0.95, 0.91, 1…</code></pre>
 </ul>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r professor code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(viridis)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(viridis)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: viridisLite</code></pre>
+<pre class="prof-msg"><code>Loading required package: viridisLite</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>
+<pre class="prof-msg"><code>
 Attaching package: 'viridis'</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:scales':
+<pre class="prof-msg"><code>The following object is masked from 'package:scales':
 
     viridis_pal</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r professor code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Aluminum oxide diagram </span></span>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Aluminum oxide diagram </span></span>
 <span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="co"># dropping my NA values</span></span>
 <span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>df_Al <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
@@ -1119,7 +1133,7 @@ Attaching package: 'viridis'</code></pre>
 <span id="cb33-61"><a href="#cb33-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r professor code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Iron oxide Harker diagram </span></span>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Iron oxide Harker diagram </span></span>
 <span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="co"># dropping my NA values</span></span>
 <span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>df_Fe <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
@@ -1182,7 +1196,7 @@ Attaching package: 'viridis'</code></pre>
 <span id="cb34-61"><a href="#cb34-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r professor code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Manganese oxide Harker diagram </span></span>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Manganese oxide Harker diagram </span></span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="co"># dropping my NA values</span></span>
 <span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>df_Mn <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
@@ -1245,7 +1259,7 @@ Attaching package: 'viridis'</code></pre>
 <span id="cb35-61"><a href="#cb35-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r professor code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Magnesium oxide Harker diagram </span></span>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Magnesium oxide Harker diagram </span></span>
 <span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a><span class="co"># dropping my NA values</span></span>
 <span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>df_Mg <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
@@ -1308,7 +1322,7 @@ Attaching package: 'viridis'</code></pre>
 <span id="cb36-61"><a href="#cb36-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r professor code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calcium oxide Harker diagram </span></span>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calcium oxide Harker diagram </span></span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="co"># dropping my NA values</span></span>
 <span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>df_Ca <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
@@ -1371,7 +1385,7 @@ Attaching package: 'viridis'</code></pre>
 <span id="cb37-61"><a href="#cb37-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r professor code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Sodium oxide Harker diagram </span></span>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Sodium oxide Harker diagram </span></span>
 <span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a><span class="co"># dropping my NA values</span></span>
 <span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>df_Na <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
@@ -1434,7 +1448,7 @@ Attaching package: 'viridis'</code></pre>
 <span id="cb38-61"><a href="#cb38-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r professor code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Potassium oxide Harker diagram </span></span>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Potassium oxide Harker diagram </span></span>
 <span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a><span class="co"># dropping my NA values</span></span>
 <span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>df_K <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
@@ -1497,7 +1511,7 @@ Attaching package: 'viridis'</code></pre>
 <span id="cb39-61"><a href="#cb39-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r professor code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Titanium dioxide Harker diagram </span></span>
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Titanium dioxide Harker diagram </span></span>
 <span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="co"># dropping my NA values</span></span>
 <span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>df_Ti <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
@@ -1560,7 +1574,7 @@ Attaching package: 'viridis'</code></pre>
 <span id="cb40-61"><a href="#cb40-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r professor code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Phosphorus pentoxide Harker diagram </span></span>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Phosphorus pentoxide Harker diagram </span></span>
 <span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a><span class="co"># dropping my NA values</span></span>
 <span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>df_P <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
@@ -1623,17 +1637,17 @@ Attaching package: 'viridis'</code></pre>
 <span id="cb41-61"><a href="#cb41-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)</span>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r prof-src code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)</span>
 <span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>Al2O3_Plot <span class="sc">+</span> Fe2O3_Plot <span class="sc">+</span> </span>
-<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>TiO2_Plot <span class="sc">+</span>   </span>
-<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>MnO_Plot <span class="sc">+</span> MgO_Plot <span class="sc">+</span></span>
-<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>CaO_Plot <span class="sc">+</span> </span>
-<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>Na2O_Plot <span class="sc">+</span> K2O_Plot <span class="sc">+</span></span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>MnO_Plot <span class="sc">+</span> MgO_Plot <span class="sc">+</span></span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>CaO_Plot <span class="sc">+</span> <span class="fu">plot_spacer</span>() <span class="sc">+</span> </span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>Na2O_Plot <span class="sc">+</span> K2O_Plot <span class="sc">+</span></span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>TiO2_Plot <span class="sc">+</span>   </span>
 <span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>P2O5_Plot <span class="sc">+</span></span>
-<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_layout</span>(<span class="at">ncol =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_layout</span>(<span class="at">ncol =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>`geom_smooth()` using formula = 'y ~ x'
+<pre class="prof-msg"><code>`geom_smooth()` using formula = 'y ~ x'
 `geom_smooth()` using formula = 'y ~ x'
 `geom_smooth()` using formula = 'y ~ x'
 `geom_smooth()` using formula = 'y ~ x'

@@ -3,6 +3,8 @@ title: "Geochemical Analyses of Hiko Canyon"
 subtitle: "EES 4891/5891: Probability and Statistics for Geosciences"
 author: "Maya Gekosky"
 date: April 21, 2025
+execute: 
+  cache: TRUE
 ---
 
 ## Setup
@@ -59,8 +61,10 @@ Also, you add the interactive "view" command, but this is something for interact
 :::
 
 ```{r read-data-jg}
-#| class.source: "professor"
-#| class.output: "professor"
+#| class.source: "prof-src"
+#| class.output: "prof-out"
+#| class.message: "prof-msg"
+#| class.warning: "prof-warn"
 #| message: false
 #| warning: false
 library(readxl)
@@ -99,12 +103,23 @@ I'm putting some different code below, just because the code I changed for readi
 :::
 
 ```{r add-units-jg}
-#| class.source: "professor"
-#| class.output: "professor"
-# I am adding a column to associate my samples with each of their determined rock unit. Abbreviations are as follows: qtz_mon = quartz monzonite, di = diorite, int = intermediate, di_amp = amphibole-rich diorite, and fgg = fine-grained granite. 
-df$units <- c("qtz_mon", "di", "int", "di_amp", "int", "fgg", "qtz_mon", "int", "fgg", "fgg", "fgg", "int", "qtz_mon")
+#| class.source: "prof-src"
+#| class.output: "prof-out"
+#| class.message: "prof-msg"
+#| class.warning: "prof-warn"
+# I am adding a column to associate my samples with each of their 
+# determined rock unit. Abbreviations are as follows: 
+#   qtz_mon = quartz monzonite, 
+#   di = diorite, 
+#   int = intermediate, 
+#   di_amp = amphibole-rich diorite, 
+#   and fgg = fine-grained granite. 
+df$units <- c("qtz_mon", "di", "int", "di_amp", "int", "fgg", 
+              "qtz_mon", "int", "fgg", "fgg", "fgg", "int", 
+              "qtz_mon")
 
-# rearranging my new column to the front so it's easier to view next to my samples.
+# rearranging my new column to the front so it's easier to view next to 
+# my samples.
 df <- relocate(df, sample, units)
 ```
 
@@ -112,15 +127,18 @@ Now I will calculate the average compositions and their standard deviations for 
 
 ```{r}
 #| eval: false
-# finding the average and standard deviation for silica in quartz monzonite
+# finding the average and standard deviation for silica in 
+# quartz monzonite
 mean(as.numeric(df[c(6, 12, 18),] [["...2"]]), na.rm = TRUE)
 sd(as.numeric(df$`...2`[c(6, 12, 18)]), na.rm = TRUE)
 
-# finding the average and standard deviation for silica in fine-grained granite
+# finding the average and standard deviation for silica in 
+# fine-grained granite
 mean(as.numeric(df[c(11, 14, 15, 16),] [["...2"]]), na.rm = TRUE)
 sd(as.numeric(df$`...2`[c(11, 14, 15, 16)]), na.rm = TRUE)
 
-# finding the average and standard deviation for silica in the intermediates
+# finding the average and standard deviation for silica in the 
+# intermediates
 mean(as.numeric(df[c(8, 10, 13, 17),] [["...2"]]), na.rm = TRUE)
 sd(as.numeric(df$`...2`[c(8, 10, 13, 17)]), na.rm = TRUE)
 ```
@@ -130,18 +148,22 @@ What you do works, but this is an easier way to do it
 :::
 
 ```{r desc-stats-jg}
-#| class.source: "professor"
-#| class.output: "professor"
+#| class.source: "prof-src"
+#| class.output: "prof-out"
+#| class.message: "prof-msg"
+#| class.warning: "prof-warn"
 
 # standard deviation for silica in quartz monzonite 
 df |> filter(units == "qtz_mon") |>
   summarize(mean = mean(SiO2), sd = sd(SiO2))  
 
-# finding the average and standard deviation for silica in fine-grained granite 
+# finding the average and standard deviation for silica in 
+# fine-grained granite 
 df |> filter(units == "fgg") |>
   summarize(mean = mean(SiO2), sd = sd(SiO2))  
 
-# finding the average and standard deviation for silica in the intermediates 
+# finding the average and standard deviation for silica in the 
+# intermediates 
 df |> filter(units == "int") |>
   summarize(mean = mean(SiO2), sd = sd(SiO2)) 
 ```
@@ -151,8 +173,10 @@ Or you could do this
 :::
 
 ```{r desc-stats-jg-2}
-#| class.source: "professor"
-#| class.output: "professor"
+#| class.source: "prof-src"
+#| class.output: "prof-out"
+#| class.message: "prof-msg"
+#| class.warning: "prof-warn"
 
 df |> filter(units %in% c("qtz_mon", "fgg", "int")) |>
   summarize(mean = mean(SiO2), sd = sd(SiO2), .by = "units")
@@ -193,8 +217,10 @@ Also, here's an easier way to do your Q-Q plots
 :::
 
 ```{r QQ-plots-jg}
-#| class.source: "professor"
-#| class.output: "professor"
+#| class.source: "prof-src"
+#| class.output: "prof-out"
+#| class.message: "prof-msg"
+#| class.warning: "prof-warn"
 
 # making a q-q plot for quartz monzonite samples
 data_vals_qtz_mon <- df |> filter(units == "qtz_mon") |> pull(SiO2)
@@ -916,8 +942,10 @@ A couple of notes:
 :::
 
 ```{r al2o3-plot-jg}
-#| class.source: "professor"
-#| class.output: "professor"
+#| class.source: "prof-src"
+#| class.output: "prof-out"
+#| class.message: "prof-msg"
+#| class.warning: "prof-warn"
 
 library(viridis)
 
@@ -985,8 +1013,10 @@ Al2O3_Plot <- ggplot(df_combined_Al, aes(x = SiO2, y = Al2O3,
 ```
 
 ```{r fe2o3-plot-jg}
-#| class.source: "professor"
-#| class.output: "professor"
+#| class.source: "prof-src"
+#| class.output: "prof-out"
+#| class.message: "prof-msg"
+#| class.warning: "prof-warn"
 
 # Iron oxide Harker diagram 
 
@@ -1052,8 +1082,10 @@ Fe2O3_Plot <- ggplot(df_combined_Fe, aes(x = SiO2, y = Fe2O3,
 ```
 
 ```{r mno-plot-jg}
-#| class.source: "professor"
-#| class.output: "professor"
+#| class.source: "prof-src"
+#| class.output: "prof-out"
+#| class.message: "prof-msg"
+#| class.warning: "prof-warn"
 
 # Manganese oxide Harker diagram 
 
@@ -1119,8 +1151,10 @@ MnO_Plot <- ggplot(df_combined_Mn, aes(x = SiO2, y = MnO,
 ```
 
 ```{r mgo-plot-jg}
-#| class.source: "professor"
-#| class.output: "professor"
+#| class.source: "prof-src"
+#| class.output: "prof-out"
+#| class.message: "prof-msg"
+#| class.warning: "prof-warn"
 
 # Magnesium oxide Harker diagram 
 
@@ -1187,8 +1221,10 @@ MgO_Plot <- ggplot(df_combined_Mg, aes(x = SiO2, y = MgO,
 
 
 ```{r cao-plot-jg}
-#| class.source: "professor"
-#| class.output: "professor"
+#| class.source: "prof-src"
+#| class.output: "prof-out"
+#| class.message: "prof-msg"
+#| class.warning: "prof-warn"
 
 # Calcium oxide Harker diagram 
 
@@ -1254,8 +1290,10 @@ CaO_Plot <- ggplot(df_combined_Ca, aes(x = SiO2, y = CaO,
 ```
 
 ```{r na2o-plot-jg}
-#| class.source: "professor"
-#| class.output: "professor"
+#| class.source: "prof-src"
+#| class.output: "prof-out"
+#| class.message: "prof-msg"
+#| class.warning: "prof-warn"
 
 # Sodium oxide Harker diagram 
 
@@ -1321,8 +1359,10 @@ Na2O_Plot <- ggplot(df_combined_Na, aes(x = SiO2, y = Na2O,
 ```
 
 ```{r k2o-plot-jg}
-#| class.source: "professor"
-#| class.output: "professor"
+#| class.source: "prof-src"
+#| class.output: "prof-out"
+#| class.message: "prof-msg"
+#| class.warning: "prof-warn"
 
 # Potassium oxide Harker diagram 
 
@@ -1389,8 +1429,10 @@ K2O_Plot <- ggplot(df_combined_K, aes(x = SiO2, y = K2O,
 
 
 ```{r tio2-plot-jg}
-#| class.source: "professor"
-#| class.output: "professor"
+#| class.source: "prof-src"
+#| class.output: "prof-out"
+#| class.message: "prof-msg"
+#| class.warning: "prof-warn"
 
 # Titanium dioxide Harker diagram 
 
@@ -1457,8 +1499,10 @@ TiO2_Plot <- ggplot(df_combined_Ti, aes(x = SiO2, y = TiO2,
 
 
 ```{r p2o5-plot-jg}
-#| class.source: "professor"
-#| class.output: "professor"
+#| class.source: "prof-src"
+#| class.output: "prof-out"
+#| class.message: "prof-msg"
+#| class.warning: "prof-warn"
 
 # Phosphorus pentoxide Harker diagram 
 
@@ -1524,16 +1568,21 @@ P2O5_Plot <- ggplot(df_combined_P, aes(x = SiO2, y = P2O5,
 ```
 
 ```{r harker-plots}
-#| fig.height: 8
+#| fig.height: 12
+#| class.source: "prof-src"
+#| class.output: "prof-out"
+#| class.message: "prof-msg"
+#| class.warning: "prof-warn"
+
 library(patchwork)
 
 Al2O3_Plot + Fe2O3_Plot + 
-TiO2_Plot +   
 MnO_Plot + MgO_Plot +
-CaO_Plot + 
+CaO_Plot + plot_spacer() + 
 Na2O_Plot + K2O_Plot +
+TiO2_Plot +   
 P2O5_Plot +
-  plot_layout(ncol = 3)
+  plot_layout(ncol = 2)
 ```
 
 ### Results and Discussion
