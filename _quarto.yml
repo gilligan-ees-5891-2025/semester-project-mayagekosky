@@ -7,4 +7,4 @@ execute:
   cache: false
 format:
   html:
-    css: "css/project.css"
+    css: "css/grading.css"

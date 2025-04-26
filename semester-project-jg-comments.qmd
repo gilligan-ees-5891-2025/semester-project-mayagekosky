@@ -1,0 +1,1701 @@
+---
+title: "Geochemical Analyses of Hiko Canyon"
+subtitle: "EES 4891/5891: Probability and Statistics for Geosciences"
+author: "Maya Gekosky"
+date: April 21, 2025
+execute: 
+  cache: TRUE
+---
+
+## Setup
+
+Set up R environment by loading the necessary libraries
+
+```{r setup}
+#| message: false
+#| warning: false
+#| echo: true
+#| results: "hide"
+library(knitr)
+library(scales)
+library(tidyverse)
+library(tidymodels)
+
+# set up default plotting format for ggplot2 graphs
+theme_set(theme_bw())
+```
+
+## Introduction
+
+In this study I will be analyzing the whole rock geochemical analyses for 13
+rock samples. These rock samples are from Hiko Canyon, a small area within the
+Spirit Mountain batholith, southern Nevada.
+
+Hiko Canyon is known for its heterogeneity and diverse magmatic interactions.
+It contains various degrees of both mixing and mingling of felsic and mafic
+magmas. I am interested in further exploring the magmatic interactions that
+occur here through analyzing the geochemistry of rock samples to see any
+relationships between units.
+
+There are five main units within the system: quartz-monzonite, fine-grained
+granite, diorite, amphibole-rich diorite, and intermediate. We have proposed
+that the fine-grained granite sample is a felsic end-member and the diorites
+are mafic end-members with the intermediate compositions representing some
+mixture of the two. My data set comes from the sampled units taken from Hiko
+Canyon. Rock slabs were made at Vanderbilt and then they were processed and
+analyzed for major and trace elements by Activation Laboratories Ltd.
+
+### Data set
+
+The data set we are looking at shows geochemical analyses for 13 rock samples.
+All of the variables measured are analytes (major elements and trace elements).
+There are 56 columns ( 55 are analytes, one contains labels/sample names). Out
+of my 13 samples there are 3 quartz monzonites, 4 fine-grained granites, 1
+diorite, 1 amphibole-rich diorite, and 4 intermediate samples.
+
+```{r read-data}
+#| eval: false
+library(readxl)
+
+df <- read_excel("hiko_geochem.xlsx")  
+glimpse(df) # tells us how many rows and columns there are. 
+view(df)     # can observe data sheet in an expanded format.
+```
+
+::: { .comment }
+You can read the data frame in more cleanly if you skip the rows with unit
+symbol, detection limit, and analysis method.
+
+Below, I've rewritten your `read_excel` code to split it into two parts: the
+first reads the names of the columns, which appear on row 3 of the spreadsheet,
+and the second reads the data, which begins on row 7.
+
+To read the column names, I just read one line, and tell R that we want to skip
+the first two rows, and want to read 0 rows of data (i.e., only read the column
+names). I also tell it to clean up the column names, and fixing any characters
+that can't be legal R variables. For instance `Fe2O3(T)` becomes `Fe2O3.T`
+finally, I rename the first column `sample` instead of `Analyte.Symbol`.
+
+Then, when I read in the data from the spreadsheet, I tell `read_excel` to use
+`names(cols)` for the column names.
+
+This gives you a much more manageable data frame.
+
+Also, you add the interactive "view" command, but this is something for
+interactive use, and isn't suitable for building into a document with Quarto.
+
+```{r read-data-jg}
+#| class.source: "grade-src"
+#| class.output: "grade-out"
+#| class.message: "grade-msg"
+#| class.warning: "grade-warn"
+#| class.error: "grade-err"
+#| message: false
+#| warning: false
+library(readxl)
+
+cols <- read_excel("hiko_geochem.xlsx", skip = 2, n_max = 0, 
+                   .name_repair = "universal") |> 
+  rename(sample = Analyte.Symbol, Fe2O3 = Fe2O3.T.)
+
+df <- read_excel("hiko_geochem.xlsx", skip = 6, 
+                 col_names = names(cols))
+glimpse(df, width=60) # tells us how many rows and columns there are. 
+```
+:::
+
+## Descriptive Statistics
+
+## Descriptive Statistics
+
+Here I will be adding a column that will associate the rock unit for each
+sample.
+
+```{r, add-units}
+#| eval: false
+# I am adding a column to associate my samples with each of their determined rock unit. Abbreviations are as follows: qtz_mon = quartz monzonite, di = diorite, int = intermediate, di_amp = amphibole-rich diorite, and fgg = fine-grained granite. 
+df$units <- c("n/a", "n/a", "n/a", "n/a", "n/a", "qtz_mon", "di", "int", "di_amp", "int", "fgg", "qtz_mon", "int", "fgg", "fgg", "fgg", "int", "qtz_mon")
+
+# checking to see I added a column 
+glimpse(df)
+
+# rearranging my new column to the front so it's easier to view next to my samples.
+df <- df[, c(1, ncol(df), 2:(ncol(df) - 1))]
+```
+
+::: { .comment }
+What you do here is fine, but it's worth knowing for your future work, that it
+can be easier to use the tidyverse `relocate()` function to rearrange the
+columns than the indexing that you did.
+
+I'm putting some different code below, just because the code I changed for
+reading in the data has five fewer rows at the top of `df`
+
+```{r add-units-jg}
+#| class.source: "grade-src"
+#| class.output: "grade-out"
+#| class.message: "grade-msg"
+#| class.warning: "grade-warn"
+#| class.error: "grade-err"
+# I am adding a column to associate my samples with each of their 
+# determined rock unit. Abbreviations are as follows: 
+#   qtz_mon = quartz monzonite, 
+#   di = diorite, 
+#   int = intermediate, 
+#   di_amp = amphibole-rich diorite, 
+#   and fgg = fine-grained granite. 
+df$units <- c("qtz_mon", "di", "int", "di_amp", "int", "fgg", 
+              "qtz_mon", "int", "fgg", "fgg", "fgg", "int", 
+              "qtz_mon")
+
+# rearranging my new column to the front so it's easier to view next to 
+# my samples.
+df <- relocate(df, sample, units)
+```
+:::
+
+Now I will calculate the average compositions and their standard deviations for
+each unit's silica composition. I will only be doing this for 3 of my units
+since, the diorite and amphibole-rich diorite only have one sample each.
+
+```{r}
+#| eval: false
+# finding the average and standard deviation for silica in 
+# quartz monzonite
+mean(as.numeric(df[c(6, 12, 18),] [["...2"]]), na.rm = TRUE)
+sd(as.numeric(df$`...2`[c(6, 12, 18)]), na.rm = TRUE)
+
+# finding the average and standard deviation for silica in 
+# fine-grained granite
+mean(as.numeric(df[c(11, 14, 15, 16),] [["...2"]]), na.rm = TRUE)
+sd(as.numeric(df$`...2`[c(11, 14, 15, 16)]), na.rm = TRUE)
+
+# finding the average and standard deviation for silica in the 
+# intermediates
+mean(as.numeric(df[c(8, 10, 13, 17),] [["...2"]]), na.rm = TRUE)
+sd(as.numeric(df$`...2`[c(8, 10, 13, 17)]), na.rm = TRUE)
+```
+
+::: { .comment }
+What you do works, but this is an easier way to do it
+
+```{r desc-stats-jg}
+#| class.source: "grade-src"
+#| class.output: "grade-out"
+#| class.message: "grade-msg"
+#| class.warning: "grade-warn"
+#| class.error: "grade-err"
+
+# standard deviation for silica in quartz monzonite 
+df |> filter(units == "qtz_mon") |>
+  summarize(mean = mean(SiO2), sd = sd(SiO2))  
+
+# finding the average and standard deviation for silica in 
+# fine-grained granite 
+df |> filter(units == "fgg") |>
+  summarize(mean = mean(SiO2), sd = sd(SiO2))  
+
+# finding the average and standard deviation for silica in the 
+# intermediates 
+df |> filter(units == "int") |>
+  summarize(mean = mean(SiO2), sd = sd(SiO2)) 
+```
+
+Or you could do this
+
+```{r desc-stats-jg-2}
+#| class.source: "grade-src"
+#| class.output: "grade-out"
+#| class.message: "grade-msg"
+#| class.warning: "grade-warn"
+#| class.error: "grade-err"
+
+df |> filter(units %in% c("qtz_mon", "fgg", "int")) |>
+  summarize(mean = mean(SiO2), sd = sd(SiO2), .by = "units")
+```
+:::
+
+From observing the values we get from our averages and standard deviation
+values. We can see that the fine-grained granite samples seem to be most
+uniform as their standard deviation is about 0.40. Below I will make q-q plots
+of the three samples: quartz monzonite, fine-grained granite, and the
+intermediates to see how well they fit a normal distribution.
+
+```{r QQ-plots}
+#| eval: false
+
+# making a q-q plot for quartz monzonite samples
+data_vals_qtz_mon <- as.numeric(df$`...2`[c(6, 12, 18)])  # use your column & rows
+
+qqnorm(data_vals_qtz_mon)
+qqline(data_vals_qtz_mon, col = "cyan4", lwd = 2)
+
+# making a q-q plot for fine-grained granite samples
+data_vals_fgg <- as.numeric(df$`...2`[c(11, 14, 15, 16)])
+
+qqnorm(data_vals_fgg)
+qqline(data_vals_fgg, col = "purple4", lwd = 2)
+
+# making a q-q plot for intermediate samples
+data_vals_int <- as.numeric(df$`...2`[c(8, 10, 13, 17)])  # use your column & rows
+
+qqnorm(data_vals_int)
+qqline(data_vals_int, col = "magenta4", lwd = 2)
+```
+
+::: { .comment }
+Q-Q plots are better-suited for data sets where you have many observations.
+When you only have 3 or 4 observations, they don't tell you much.
+
+This gets to a deeper point: You can't tell anything useful about a
+distribution of data if you only have a few observations. It only makes sense
+to test whether your data is normally distributed, or follows some other
+distribution if you have many observations. Rule of thumb, I would say 10 at a
+bare minimum and preferably, 20 or more.
+:::
+
+::: { .comment }
+Also, here's an easier way to do your Q-Q plots
+
+```{r QQ-plots-jg}
+#| class.source: "grade-src"
+#| class.output: "grade-out"
+#| class.message: "grade-msg"
+#| class.warning: "grade-warn"
+#| class.error: "grade-err"
+
+# making a q-q plot for quartz monzonite samples
+data_vals_qtz_mon <- df |> filter(units == "qtz_mon") |> pull(SiO2)
+
+qqnorm(data_vals_qtz_mon)
+qqline(data_vals_qtz_mon, col = "cyan4", lwd = 2)
+
+# making a q-q plot for fine-grained granite samples
+data_vals_fgg <- df |> filter(units == "fgg") |> pull(SiO2)
+
+qqnorm(data_vals_fgg)
+qqline(data_vals_fgg, col = "purple4", lwd = 2)
+
+# making a q-q plot for intermediate samples
+data_vals_int <-  df |> filter(units == "int") |> pull(SiO2)
+
+qqnorm(data_vals_int)
+qqline(data_vals_int, col = "magenta4", lwd = 2)
+```
+:::
+
+## Research Questions
+
+Fine-grained granites are our proposed felsic end-members of our system. The
+diorites are our proposed mafic end-members of our system. I would like to
+observe the relationships between these units by plotting bivariate diagrams of
+the major oxides. This will answer a couple of questions:
+
+Is there a relationship between our mafic and felsic end-members?
+
+Do our intermediate compositions fit within this mixing model?
+
+## Hypotheses and Tests
+
+### Hypotheses
+
+I hypothesize that our intermediate compositions are some kind of mixture of
+our two end-member compositions.
+
+### Methods
+
+This will be tested through looking at our multivariate data and creating
+bivariate scatterplots.
+
+```{r al2o3-plot}
+#| eval: false
+
+library(dplyr)
+library(ggplot2)
+library(viridis)
+
+# Aluminum oxide diagram 
+
+# dropping my NA values
+df <- df |>
+  mutate(
+    SiO2 = as.numeric(...2),
+    Al2O3 = as.numeric(...3)
+  ) |>
+  filter(!is.na(SiO2), !is.na(Al2O3)) |>   
+  filter(units != "n/a")                    
+
+# creating fgg avg. in plot. 
+fgg_avg_Al2O3 <- df |>
+  filter(units == "fgg") |>
+  summarize(
+    SiO2 = mean(SiO2, na.rm = TRUE),
+    Al2O3 = mean(Al2O3, na.rm = TRUE),
+    units = "fgg (avg)"
+  )
+
+# combining fgg with rest of data 
+df_combined_Al <- bind_rows(df, fgg_avg_Al2O3)
+
+# Creating points so I can draw a mixing line. 
+fgg_point <- df_combined_Al |> filter(units == "fgg (avg)")
+di_point     <- df_combined_Al |> filter(units == "di")     |> slice(1)
+di_amp_point <- df_combined_Al |> filter(units == "di_amp") |> slice(1)
+
+
+# plotting my data for Al2O3 Harker diagram. 
+Al2O3_Plot <- ggplot(df_combined_Al, aes(x = SiO2, y = Al2O3, color = units)) +
+   geom_segment(
+    aes(
+      x = fgg_point$SiO2, y = fgg_point$Al2O3,
+      xend = di_point$SiO2, yend = di_point$Al2O3
+    ),
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_segment(
+    aes(
+      x = fgg_point$SiO2, y = fgg_point$Al2O3,
+      xend = di_amp_point$SiO2, yend = di_amp_point$Al2O3
+    ),
+    color = "grey28", linewidth = 0.8
+  ) +
+   geom_point(data = df_combined_Al |> filter(units != "fgg (avg)"), size = 3) +
+ geom_smooth(
+  data = df_combined_Al |>
+    filter(!units %in% c("fgg", "fgg (avg)", "int", "qtz_mon")),
+  aes(group = units),
+  method = "lm",
+  se = FALSE
+  ) +
+  geom_point(
+    data = df_combined_Al |> filter(units == "fgg (avg)"),
+    size = 5,
+    shape = 18
+  ) +
+  scale_color_viridis_d(option = "D") +
+  scale_x_continuous(limits = c(45, 80), breaks = seq(45, 80, 15)) +
+  scale_y_continuous(limits = c(10, 20), breaks = seq(10, 20, 2)) +
+  labs(
+    x     = "SiO2 (wt%)",
+    y     = "Al2O3 (wt%)",
+    color = "Rock Unit"
+  ) +
+  theme_bw() +
+  ggtitle("Harker Diagram: SiO2 vs Al2O3\n(with fgg averaged)")
+
+Al2O3_Plot
+```
+
+```{r fe2o3-plot}
+#| eval: false
+
+# iron oxide Harker diagram 
+
+# dropping my NA values
+df <- df |>
+  mutate(
+    SiO2 = as.numeric(...2),
+    Fe2O3 = as.numeric(...4)
+  ) |>
+  filter(!is.na(SiO2), !is.na(Fe2O3)) |>   
+  filter(units != "n/a")                    
+
+# creating fgg avg. in plot. 
+fgg_avg_Fe2O3 <- df |>
+  filter(units == "fgg") |>
+  summarize(
+    SiO2 = mean(SiO2, na.rm = TRUE),
+    Fe2O3 = mean(Fe2O3, na.rm = TRUE),
+    units = "fgg (avg)"
+  )
+
+# combining fgg with rest of data 
+df_combined_Fe <- bind_rows(df, fgg_avg_Fe2O3)
+
+# Creating points so I can draw a mixing line. 
+fgg_point <- df_combined_Fe |> filter(units == "fgg (avg)")
+di_point     <- df_combined_Fe |> filter(units == "di")     |> slice(1)
+di_amp_point <- df_combined_Fe |> filter(units == "di_amp") |> slice(1)
+
+# plotting my data for Fe2O3 Harker diagram. 
+Fe2O3_Plot <- ggplot(df_combined_Fe, aes(x = SiO2, y = Fe2O3, color = units)) +
+   geom_segment(
+    aes(
+      x = fgg_point$SiO2, y = fgg_point$Fe2O3,
+      xend = di_point$SiO2, yend = di_point$Fe2O3
+    ),
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_segment(
+    aes(
+      x = fgg_point$SiO2, y = fgg_point$Fe2O3,
+      xend = di_amp_point$SiO2, yend = di_amp_point$Fe2O3
+    ),
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_point(data = df_combined_Fe |> filter(units != "fgg (avg)"), size = 3) +
+ geom_smooth(
+  data = df_combined_Fe |>
+    filter(!units %in% c("fgg", "fgg (avg)", "int", "qtz_mon")),
+  aes(group = units),
+  method = "lm",
+  se = FALSE
+  ) +
+  geom_point(
+    data = df_combined_Fe |> filter(units == "fgg (avg)"),
+    size = 5,
+    shape = 18
+  ) +
+  scale_color_viridis_d(option = "D") +
+  scale_x_continuous(limits = c(45, 80), breaks = seq(45, 80, 15)) +
+  scale_y_continuous(limits = c(0, 12), breaks = seq(0, 12, 2)) +
+  labs(
+    x     = "SiO2 (wt%)",
+    y     = "Fe2O3 (wt%)",
+    color = "Rock Unit"
+  ) +
+  theme_bw() +
+  ggtitle("Harker Diagram: SiO2 vs Fe2O3\n(with fgg averaged)")
+
+Fe2O3_Plot
+```
+
+```{r mno-plot}
+#| eval: false
+
+# Magnesium oxide Harker diagram 
+
+# dropping my NA values
+df <- df |>
+  mutate(
+    SiO2 = as.numeric(...2),
+    MnO = as.numeric(...5)
+  ) |>
+  filter(!is.na(SiO2), !is.na(MnO)) |>   
+  filter(units != "n/a")                    
+
+# creating fgg avg. in plot. 
+fgg_avg_MnO <- df |>
+  filter(units == "fgg") |>
+  summarize(
+    SiO2 = mean(SiO2, na.rm = TRUE),
+    MnO = mean(MnO, na.rm = TRUE),
+    units = "fgg (avg)"
+  )
+
+# combining fgg with rest of data 
+df_combined_Mn <- bind_rows(df, fgg_avg_MnO)
+
+# Creating points so I can draw a mixing line. 
+fgg_point <- df_combined_Mn |> filter(units == "fgg (avg)")
+di_point     <- df_combined_Mn |> filter(units == "di")     |> slice(1)
+di_amp_point <- df_combined_Mn |> filter(units == "di_amp") |> slice(1)
+
+# plotting my data for MnO Harker diagram. 
+MnO_Plot <- ggplot(df_combined_Mn, aes(x = SiO2, y = MnO, color = units)) +
+   geom_segment(
+    aes(
+      x = fgg_point$SiO2, y = fgg_point$MnO,
+      xend = di_point$SiO2, yend = di_point$MnO
+    ),
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_segment(
+    aes(
+      x = fgg_point$SiO2, y = fgg_point$MnO,
+      xend = di_amp_point$SiO2, yend = di_amp_point$MnO
+    ),
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_point(data = df_combined_Mn |> filter(units != "fgg (avg)"), size = 3) +
+ geom_smooth(
+  data = df_combined_Mn |>
+    filter(!units %in% c("fgg", "fgg (avg)", "int", "qtz_mon")),
+  aes(group = units),
+  method = "lm",
+  se = FALSE
+  ) +
+  geom_point(
+    data = df_combined_Mn |> filter(units == "fgg (avg)"),
+    size = 5,
+    shape = 18
+  ) +
+  scale_color_viridis_d(option = "D") +
+  scale_x_continuous(limits = c(45, 80), breaks = seq(45, 80, 15)) +
+  scale_y_continuous(limits = c(0, 0.20), breaks = seq(0, 0.20, 0.04)) +
+  labs(
+    x     = "SiO2 (wt%)",
+    y     = "MnO (wt%)",
+    color = "Rock Unit"
+  ) +
+  theme_bw() +
+  ggtitle("Harker Diagram: SiO2 vs MnO\n(with fgg averaged)")
+
+MnO_Plot
+```
+
+```{r mgo-plot}
+#| eval: false
+
+# magnesium oxide Harker diagram 
+
+# dropping my NA values
+df <- df |>
+  mutate(
+    SiO2 = as.numeric(...2),
+    MgO = as.numeric(...6)
+  ) |>
+  filter(!is.na(SiO2), !is.na(MgO)) |>   
+  filter(units != "n/a")                    
+
+# creating fgg avg. in plot. 
+fgg_avg_MgO <- df |>
+  filter(units == "fgg") |>
+  summarize(
+    SiO2 = mean(SiO2, na.rm = TRUE),
+    MgO = mean(MgO, na.rm = TRUE),
+    units = "fgg (avg)"
+  )
+
+# combining fgg with rest of data 
+df_combined_Mg <- bind_rows(df, fgg_avg_MgO)
+
+# Creating points so I can draw a mixing line. 
+fgg_point <- df_combined_Mg |> filter(units == "fgg (avg)")
+di_point     <- df_combined_Mg |> filter(units == "di")     |> slice(1)
+di_amp_point <- df_combined_Mg |> filter(units == "di_amp") |> slice(1)
+
+# plotting my data for MgO Harker diagram. 
+MgO_Plot <- ggplot(df_combined_Fe, aes(x = SiO2, y = MgO, color = units)) +
+   geom_segment(
+    aes(
+      x = fgg_point$SiO2, y = fgg_point$MgO,
+      xend = di_point$SiO2, yend = di_point$MgO
+    ),
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_segment(
+    aes(
+      x = fgg_point$SiO2, y = fgg_point$MgO,
+      xend = di_amp_point$SiO2, yend = di_amp_point$MgO
+    ),
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_point(data = df_combined_Mg |> filter(units != "fgg (avg)"), size = 3) +
+ geom_smooth(
+  data = df_combined_Mg |>
+    filter(!units %in% c("fgg", "fgg (avg)", "int", "qtz_mon")),
+  aes(group = units),
+  method = "lm",
+  se = FALSE
+  ) +
+  geom_point(
+    data = df_combined_Mg |> filter(units == "fgg (avg)"),
+    size = 5,
+    shape = 18
+  ) +
+  scale_color_viridis_d(option = "D") +
+  scale_x_continuous(limits = c(45, 80), breaks = seq(45, 80, 15)) +
+  scale_y_continuous(limits = c(0, 8), breaks = seq(0, 8, 1)) +
+  labs(
+    x     = "SiO2 (wt%)",
+    y     = "MgO (wt%)",
+    color = "Rock Unit"
+  ) +
+  theme_bw() +
+  ggtitle("Harker Diagram: SiO2 vs MgO\n(with fgg averaged)")
+
+MgO_Plot
+```
+
+```{r cao-plot}
+#| eval: false
+
+# calcium oxide Harker diagram 
+
+# dropping my NA values
+df <- df |>
+  mutate(
+    SiO2 = as.numeric(...2),
+    CaO = as.numeric(...7)
+  ) |>
+  filter(!is.na(SiO2), !is.na(CaO)) |>   
+  filter(units != "n/a")                    
+
+# creating fgg avg. in plot. 
+fgg_avg_CaO <- df |>
+  filter(units == "fgg") |>
+  summarize(
+    SiO2 = mean(SiO2, na.rm = TRUE),
+    CaO = mean(CaO, na.rm = TRUE),
+    units = "fgg (avg)"
+  )
+
+# combining fgg with rest of data 
+df_combined_Ca <- bind_rows(df, fgg_avg_CaO)
+
+# Creating points so I can draw a mixing line. 
+fgg_point <- df_combined_Ca |> filter(units == "fgg (avg)")
+di_point     <- df_combined_Ca |> filter(units == "di")     |> slice(1)
+di_amp_point <- df_combined_Ca |> filter(units == "di_amp") |> slice(1)
+
+# plotting my data for CaO Harker diagram. 
+CaO_Plot <- ggplot(df_combined_Ca, aes(x = SiO2, y = CaO, color = units)) +
+   geom_segment(
+    aes(
+      x = fgg_point$SiO2, y = fgg_point$CaO,
+      xend = di_point$SiO2, yend = di_point$CaO
+    ),
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_segment(
+    aes(
+      x = fgg_point$SiO2, y = fgg_point$CaO,
+      xend = di_amp_point$SiO2, yend = di_amp_point$CaO
+    ),
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_point(data = df_combined_Ca |> filter(units != "fgg (avg)"), size = 3) +
+ geom_smooth(
+  data = df_combined_Ca |>
+    filter(!units %in% c("fgg", "fgg (avg)", "int", "qtz_mon")),
+  aes(group = units),
+  method = "lm",
+  se = FALSE
+  ) +
+  geom_point(
+    data = df_combined_Ca |> filter(units == "fgg (avg)"),
+    size = 5,
+    shape = 18
+  ) +
+  scale_color_viridis_d(option = "D") +
+  scale_x_continuous(limits = c(45, 80), breaks = seq(45, 80, 15)) +
+  scale_y_continuous(limits = c(0, 12), breaks = seq(0, 12, 2)) +
+  labs(
+    x     = "SiO2 (wt%)",
+    y     = "CaO (wt%)",
+    color = "Rock Unit"
+  ) +
+  theme_bw() +
+  ggtitle("Harker Diagram: SiO2 vs CaO\n(with fgg averaged)")
+
+CaO_Plot
+```
+
+```{r na2o-plot}
+#| eval: false
+
+# sodium oxide Harker diagram 
+
+# dropping my NA values
+df <- df |>
+  mutate(
+    SiO2 = as.numeric(...2),
+    Na2O = as.numeric(...8)
+  ) |>
+  filter(!is.na(SiO2), !is.na(Na2O)) |>   
+  filter(units != "n/a")                    
+
+# creating fgg avg. in plot. 
+fgg_avg_Na2O <- df |>
+  filter(units == "fgg") |>
+  summarize(
+    SiO2 = mean(SiO2, na.rm = TRUE),
+    Na2O = mean(Na2O, na.rm = TRUE),
+    units = "fgg (avg)"
+  )
+
+# combining fgg with rest of data 
+df_combined_Na <- bind_rows(df, fgg_avg_Na2O)
+
+# Creating points so I can draw a mixing line. 
+fgg_point <- df_combined_Na |> filter(units == "fgg (avg)")
+di_point     <- df_combined_Na |> filter(units == "di")     |> slice(1)
+di_amp_point <- df_combined_Na |> filter(units == "di_amp") |> slice(1)
+
+# plotting my data for Na2O Harker diagram. 
+Na2O_Plot <-ggplot(df_combined_Na, aes(x = SiO2, y = Na2O, color = units)) +
+   geom_segment(
+    aes(
+      x = fgg_point$SiO2, y = fgg_point$Na2O,
+      xend = di_point$SiO2, yend = di_point$Na2O
+    ),
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_segment(
+    aes(
+      x = fgg_point$SiO2, y = fgg_point$Na2O,
+      xend = di_amp_point$SiO2, yend = di_amp_point$Na2O
+    ),
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_point(data = df_combined_Na |> filter(units != "fgg (avg)"), size = 3) +
+ geom_smooth(
+  data = df_combined_Na |>
+    filter(!units %in% c("fgg", "fgg (avg)", "int", "qtz_mon")),
+  aes(group = units),
+  method = "lm",
+  se = FALSE
+  ) +
+  geom_point(
+    data = df_combined_Na |> filter(units == "fgg (avg)"),
+    size = 5,
+    shape = 18
+  ) +
+  scale_color_viridis_d(option = "D") +
+  scale_x_continuous(limits = c(45, 80), breaks = seq(45, 80, 15)) +
+  scale_y_continuous(limits = c(0, 7), breaks = seq(0, 7, 1)) +
+  labs(
+    x     = "SiO2 (wt%)",
+    y     = "Na2O (wt%)",
+    color = "Rock Unit"
+  ) +
+  theme_bw() +
+  ggtitle("Harker Diagram: SiO2 vs Na2O\n(with fgg averaged)")
+
+Na2O_Plot
+```
+
+```{r ko-plot}
+#| eval: false
+
+# potassium oxide Harker diagram 
+
+# dropping my NA values
+df <- df |>
+  mutate(
+    SiO2 = as.numeric(...2),
+    K2O = as.numeric(...9)
+  ) |>
+  filter(!is.na(SiO2), !is.na(K2O)) |>   
+  filter(units != "n/a")                    
+
+# creating fgg avg. in plot. 
+fgg_avg_K2O <- df |>
+  filter(units == "fgg") |>
+  summarize(
+    SiO2 = mean(SiO2, na.rm = TRUE),
+    K2O = mean(K2O, na.rm = TRUE),
+    units = "fgg (avg)"
+  )
+
+# combining fgg with rest of data 
+df_combined_K <- bind_rows(df, fgg_avg_K2O)
+
+# Creating points so I can draw a mixing line. 
+fgg_point <- df_combined_K |> filter(units == "fgg (avg)")
+di_point     <- df_combined_K |> filter(units == "di")     |> slice(1)
+di_amp_point <- df_combined_K |> filter(units == "di_amp") |> slice(1)
+
+# plotting my data for K2O Harker diagram. 
+K2O_Plot <-ggplot(df_combined_K, aes(x = SiO2, y = K2O, color = units)) +
+   geom_segment(
+    aes(
+      x = fgg_point$SiO2, y = fgg_point$K2O,
+      xend = di_point$SiO2, yend = di_point$K2O
+    ),
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_segment(
+    aes(
+      x = fgg_point$SiO2, y = fgg_point$K2O,
+      xend = di_amp_point$SiO2, yend = di_amp_point$K2O
+    ),
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_point(data = df_combined_K |> filter(units != "fgg (avg)"), size = 3) +
+ geom_smooth(
+  data = df_combined_K |>
+    filter(!units %in% c("fgg", "fgg (avg)", "int", "qtz_mon")),
+  aes(group = units),
+  method = "lm",
+  se = FALSE
+  ) +
+  geom_point(
+    data = df_combined_K |> filter(units == "fgg (avg)"),
+    size = 5,
+    shape = 18
+  ) +
+  scale_color_viridis_d(option = "D") +
+  scale_x_continuous(limits = c(45, 80), breaks = seq(45, 80, 15)) +
+  scale_y_continuous(limits = c(0, 9), breaks = seq(0, 9, 1)) +
+  labs(
+    x     = "SiO2 (wt%)",
+    y     = "K2O (wt%)",
+    color = "Rock Unit"
+  ) +
+  theme_bw() +
+  ggtitle("Harker Diagram: SiO2 vs K2O\n(with fgg averaged)")
+
+K2O_Plot
+```
+
+```{r tio-plot}
+#| eval: false
+
+# titanium oxide Harker diagram 
+
+# dropping my NA values
+df <- df |>
+  mutate(
+    SiO2 = as.numeric(...2),
+    Ti2O = as.numeric(...10)
+  ) |>
+  filter(!is.na(SiO2), !is.na(Ti2O)) |>   
+  filter(units != "n/a")                    
+
+# creating fgg avg. in plot. 
+fgg_avg_Ti2O <- df |>
+  filter(units == "fgg") |>
+  summarize(
+    SiO2 = mean(SiO2, na.rm = TRUE),
+    Ti2O = mean(Ti2O, na.rm = TRUE),
+    units = "fgg (avg)"
+  )
+
+# combining fgg with rest of data 
+df_combined_Ti <- bind_rows(df, fgg_avg_Ti2O)
+
+# Creating points so I can draw a mixing line. 
+fgg_point <- df_combined_Ti |> filter(units == "fgg (avg)")
+di_point     <- df_combined_Ti |> filter(units == "di")     |> slice(1)
+di_amp_point <- df_combined_Ti |> filter(units == "di_amp") |> slice(1)
+
+# plotting my data for Ti2O Harker diagram. 
+TiO2_Plot <- ggplot(df_combined_Ti, aes(x = SiO2, y = Ti2O, color = units)) +
+   geom_segment(
+    aes(
+      x = fgg_point$SiO2, y = fgg_point$Ti2O,
+      xend = di_point$SiO2, yend = di_point$Ti2O
+    ),
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_segment(
+    aes(
+      x = fgg_point$SiO2, y = fgg_point$Ti2O,
+      xend = di_amp_point$SiO2, yend = di_amp_point$Ti2O
+    ),
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_point(data = df_combined_Ti |> filter(units != "fgg (avg)"), size = 3) +
+ geom_smooth(
+  data = df_combined_Ti |>
+    filter(!units %in% c("fgg", "fgg (avg)", "int", "qtz_mon")),
+  aes(group = units),
+  method = "lm",
+  se = FALSE
+  ) +
+  geom_point(
+    data = df_combined_Ti |> filter(units == "fgg (avg)"),
+    size = 5,
+    shape = 18
+  ) +
+  scale_color_viridis_d(option = "D") +
+  scale_x_continuous(limits = c(45, 80), breaks = seq(45, 80, 15)) +
+  scale_y_continuous(limits = c(0, 1.4), breaks = seq(0, 1.4, 0.2)) +
+  labs(
+    x     = "SiO2 (wt%)",
+    y     = "Ti2O (wt%)",
+    color = "Rock Unit"
+  ) +
+  theme_bw() +
+  ggtitle("Harker Diagram: SiO2 vs Ti2O\n(with fgg averaged)")
+
+TiO2_Plot
+```
+
+```{r p2o5-plot}
+#| eval: false
+
+# phosphorous pentoxide Harker diagram 
+
+# dropping my NA values
+df <- df |>
+  mutate(
+    SiO2 = as.numeric(...2),
+    P2O5 = as.numeric(...11)
+  ) |>
+  filter(!is.na(SiO2), !is.na(P2O5)) |>   
+  filter(units != "n/a")                    
+
+# creating fgg avg. in plot. 
+fgg_avg_P2O5 <- df |>
+  filter(units == "fgg") |>
+  summarize(
+    SiO2 = mean(SiO2, na.rm = TRUE),
+    P2O5 = mean(P2O5, na.rm = TRUE),
+    units = "fgg (avg)"
+  )
+
+# combining fgg with rest of data 
+df_combined_P <- bind_rows(df, fgg_avg_P2O5)
+
+# Creating points so I can draw a mixing line. 
+fgg_point <- df_combined_P |> filter(units == "fgg (avg)")
+di_point     <- df_combined_P |> filter(units == "di")     |> slice(1)
+di_amp_point <- df_combined_P |> filter(units == "di_amp") |> slice(1)
+
+# plotting my data for P2O5 Harker diagram. 
+P2O5_Plot <- ggplot(df_combined_P, aes(x = SiO2, y = P2O5, color = units)) +
+   geom_segment(
+    aes(
+      x = fgg_point$SiO2, y = fgg_point$P2O5,
+      xend = di_point$SiO2, yend = di_point$P2O5
+    ),
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_segment(
+    aes(
+      x = fgg_point$SiO2, y = fgg_point$P2O5,
+      xend = di_amp_point$SiO2, yend = di_amp_point$P2O5
+    ),
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_point(data = df_combined_P |> filter(units != "fgg (avg)"), size = 3) +
+ geom_smooth(
+  data = df_combined_P |>
+    filter(!units %in% c("fgg", "fgg (avg)", "int", "qtz_mon")),
+  aes(group = units),
+  method = "lm",
+  se = FALSE
+  ) +
+  geom_point(
+    data = df_combined_P |> filter(units == "fgg (avg)"),
+    size = 5,
+    shape = 18
+  ) +
+  scale_color_viridis_d(option = "D") +
+  scale_x_continuous(limits = c(45, 80), breaks = seq(45, 80, 15)) +
+  scale_y_continuous(limits = c(0, 0.4), breaks = seq(0, 0.4, 0.1)) +
+  labs(
+    x     = "SiO2 (wt%)",
+    y     = "P2O5 (wt%)",
+    color = "Rock Unit"
+  ) +
+  theme_bw() +
+  ggtitle("Harker Diagram: SiO2 vs P2O5\n(with fgg averaged)")
+
+P2O5_Plot
+```
+
+::: { .comment }
+These plots are fine, but here are some examples of how you could improve them:
+
+A couple of notes:
+
+-   When you put things in `aes()`, it's an aesthetic that's applied to each
+    data point.
+-   If you want to plot a segment from one specific point to another, don't put
+    the start and end points inside `aes()`
+
+```{r al2o3-plot-jg}
+#| class.source: "grade-src"
+#| class.output: "grade-out"
+#| class.message: "grade-msg"
+#| class.warning: "grade-warn"
+#| class.error: "grade-err"
+
+library(viridis)
+
+# Aluminum oxide diagram 
+
+# dropping my NA values
+df_Al <- df |>
+  filter(!is.na(SiO2), !is.na(Al2O3), ! is.na(units))
+
+# creating fgg avg. in plot. 
+fgg_avg_Al2O3 <- df_Al |>
+  filter(units == "fgg") |>
+  summarize(
+    SiO2 = mean(SiO2, na.rm = TRUE),
+    Al2O3 = mean(Al2O3, na.rm = TRUE),
+    units = "fgg (avg)"
+  )
+
+# combining fgg with rest of data 
+df_combined_Al <- bind_rows(df_Al, fgg_avg_Al2O3)
+
+# Creating points so I can draw a mixing line. 
+fgg_point <- df_combined_Al |> filter(units == "fgg (avg)")
+di_point     <- df_combined_Al |> filter(units == "di")     |> slice(1)
+di_amp_point <- df_combined_Al |> filter(units == "di_amp") |> slice(1)
+
+# plotting my data for Al2O3 Harker diagram. 
+Al2O3_Plot <- ggplot(df_combined_Al, aes(x = SiO2, y = Al2O3,
+                                         color = units)) +
+  geom_segment(
+    x = fgg_point$SiO2, y = fgg_point$Al2O3,
+    xend = di_point$SiO2, yend = di_point$Al2O3, 
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_segment(
+    x = fgg_point$SiO2, y = fgg_point$Al2O3,
+    xend = di_amp_point$SiO2, yend = di_amp_point$Al2O3, 
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_point(data = df_Al, size = 3) +
+  geom_smooth(
+    data = df_combined_Al |>
+      filter(!units %in% c("fgg", "fgg (avg)", "int", "qtz_mon")),
+    aes(group = units),
+    method = "lm",
+    se = FALSE
+  ) +
+  geom_point(
+    data = fgg_point,
+    shape = 18,
+    size = 5,
+  ) +
+  scale_color_viridis_d(option = "D") +
+  scale_x_continuous(limits = c(45, 80), breaks = seq(45, 80, 15)) +
+  scale_y_continuous(limits = c(10, 20), breaks = seq(10, 20, 2)) +
+  labs(
+    x     = expression(paste(Si * O[2], " (wt%)")),
+    y     = expression(paste(Al[2] * O[3], " (wt%)")),
+    color = "Rock Unit",
+    title = expression(paste("Harker Diagram: ", Si * O[2],
+                             " vs ", Al[2] * O[3])),
+    subtitle = "(with fgg averaged)"
+  ) +
+  theme_bw()
+```
+
+```{r fe2o3-plot-jg}
+#| class.source: "grade-src"
+#| class.output: "grade-out"
+#| class.message: "grade-msg"
+#| class.warning: "grade-warn"
+#| class.error: "grade-err"
+
+# Iron oxide Harker diagram 
+
+# dropping my NA values
+df_Fe <- df |>
+  filter(!is.na(SiO2), !is.na(Fe2O3), ! is.na(units))
+
+# creating fgg avg. in plot. 
+fgg_avg_Fe2O3 <- df_Fe |>
+  filter(units == "fgg") |>
+  summarize(
+    SiO2 = mean(SiO2, na.rm = TRUE),
+    Fe2O3 = mean(Fe2O3, na.rm = TRUE),
+    units = "fgg (avg)"
+  )
+
+# combining fgg with rest of data 
+df_combined_Fe <- bind_rows(df_Fe, fgg_avg_Fe2O3)
+
+# Creating points so I can draw a mixing line. 
+fgg_point <- df_combined_Fe |> filter(units == "fgg (avg)")
+di_point     <- df_combined_Fe |> filter(units == "di")     |> slice(1)
+di_amp_point <- df_combined_Fe |> filter(units == "di_amp") |> slice(1)
+
+# plotting my data for Fe2O3 Harker diagram. 
+Fe2O3_Plot <- ggplot(df_combined_Fe, aes(x = SiO2, y = Fe2O3,
+                                         color = units)) +
+  geom_segment(
+    x = fgg_point$SiO2, y = fgg_point$Fe2O3,
+    xend = di_point$SiO2, yend = di_point$Fe2O3, 
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_segment(
+    x = fgg_point$SiO2, y = fgg_point$Fe2O3,
+    xend = di_amp_point$SiO2, yend = di_amp_point$Fe2O3, 
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_point(data = df_Fe, size = 3) +
+  geom_smooth(
+    data = df_combined_Fe |>
+      filter(!units %in% c("fgg", "fgg (avg)", "int", "qtz_mon")),
+    aes(group = units),
+    method = "lm",
+    se = FALSE
+  ) +
+  geom_point(
+    data = fgg_point,
+    shape = 18,
+    size = 5,
+  ) +
+  scale_color_viridis_d(option = "D") +
+  scale_x_continuous(limits = c(45, 80), breaks = seq(45, 80, 15)) +
+  scale_y_continuous(limits = c(0, 12), breaks = seq(0, 12, 2)) +
+  labs(
+    x     = expression(paste(Si * O[2], " (wt%)")),
+    y     = expression(paste(Fe[2] * O[3], " (wt%)")),
+    color = "Rock Unit",
+    title = expression(paste("Harker Diagram: ", Si * O[2],
+                             " vs ", Fe[2] * O[3])),
+    subtitle = "(with fgg averaged)"
+  ) +
+  theme_bw()
+```
+
+```{r mno-plot-jg}
+#| class.source: "grade-src"
+#| class.output: "grade-out"
+#| class.message: "grade-msg"
+#| class.warning: "grade-warn"
+#| class.error: "grade-err"
+
+# Manganese oxide Harker diagram 
+
+# dropping my NA values
+df_Mn <- df |>
+  filter(!is.na(SiO2), !is.na(MnO), ! is.na(units))
+
+# creating fgg avg. in plot. 
+fgg_avg_MnO <- df_Mn |>
+  filter(units == "fgg") |>
+  summarize(
+    SiO2 = mean(SiO2, na.rm = TRUE),
+    MnO = mean(MnO, na.rm = TRUE),
+    units = "fgg (avg)"
+  )
+
+# combining fgg with rest of data 
+df_combined_Mn <- bind_rows(df_Mn, fgg_avg_MnO)
+
+# Creating points so I can draw a mixing line. 
+fgg_point <- df_combined_Mn |> filter(units == "fgg (avg)")
+di_point     <- df_combined_Mn |> filter(units == "di")     |> slice(1)
+di_amp_point <- df_combined_Mn |> filter(units == "di_amp") |> slice(1)
+
+# plotting my data for MnO Harker diagram. 
+MnO_Plot <- ggplot(df_combined_Mn, aes(x = SiO2, y = MnO,
+                                         color = units)) +
+  geom_segment(
+    x = fgg_point$SiO2, y = fgg_point$MnO,
+    xend = di_point$SiO2, yend = di_point$MnO, 
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_segment(
+    x = fgg_point$SiO2, y = fgg_point$MnO,
+    xend = di_amp_point$SiO2, yend = di_amp_point$MnO, 
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_point(data = df_Mn, size = 3) +
+  geom_smooth(
+    data = df_combined_Mn |>
+      filter(!units %in% c("fgg", "fgg (avg)", "int", "qtz_mon")),
+    aes(group = units),
+    method = "lm",
+    se = FALSE
+  ) +
+  geom_point(
+    data = fgg_point,
+    shape = 18,
+    size = 5,
+  ) +
+  scale_color_viridis_d(option = "D") +
+  scale_x_continuous(limits = c(45, 80), breaks = seq(45, 80, 15)) +
+  scale_y_continuous(limits = c(0, 0.2), breaks = seq(0, 0.2, 0.04)) +
+  labs(
+    x     = expression(paste(Si * O[2], " (wt%)")),
+    y     = expression(paste(Mn * O, " (wt%)")),
+    color = "Rock Unit",
+    title = expression(paste("Harker Diagram: ", Si * O[2],
+                             " vs ", Mn * O)),
+    subtitle = "(with fgg averaged)"
+  ) +
+  theme_bw()
+```
+
+```{r mgo-plot-jg}
+#| class.source: "grade-src"
+#| class.output: "grade-out"
+#| class.message: "grade-msg"
+#| class.warning: "grade-warn"
+#| class.error: "grade-err"
+
+# Magnesium oxide Harker diagram 
+
+# dropping my NA values
+df_Mg <- df |>
+  filter(!is.na(SiO2), !is.na(MgO), ! is.na(units))
+
+# creating fgg avg. in plot. 
+fgg_avg_MgO <- df_Mg |>
+  filter(units == "fgg") |>
+  summarize(
+    SiO2 = mean(SiO2, na.rm = TRUE),
+    MgO = mean(MgO, na.rm = TRUE),
+    units = "fgg (avg)"
+  )
+
+# combining fgg with rest of data 
+df_combined_Mg <- bind_rows(df_Mg, fgg_avg_MgO)
+
+# Creating points so I can draw a mixing line. 
+fgg_point <- df_combined_Mg |> filter(units == "fgg (avg)")
+di_point     <- df_combined_Mg |> filter(units == "di")     |> slice(1)
+di_amp_point <- df_combined_Mg |> filter(units == "di_amp") |> slice(1)
+
+# plotting my data for MgO Harker diagram. 
+MgO_Plot <- ggplot(df_combined_Mg, aes(x = SiO2, y = MgO,
+                                         color = units)) +
+  geom_segment(
+    x = fgg_point$SiO2, y = fgg_point$MgO,
+    xend = di_point$SiO2, yend = di_point$MgO, 
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_segment(
+    x = fgg_point$SiO2, y = fgg_point$MgO,
+    xend = di_amp_point$SiO2, yend = di_amp_point$MgO, 
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_point(data = df_Mg, size = 3) +
+  geom_smooth(
+    data = df_combined_Mg |>
+      filter(!units %in% c("fgg", "fgg (avg)", "int", "qtz_mon")),
+    aes(group = units),
+    method = "lm",
+    se = FALSE
+  ) +
+  geom_point(
+    data = fgg_point,
+    shape = 18,
+    size = 5,
+  ) +
+  scale_color_viridis_d(option = "D") +
+  scale_x_continuous(limits = c(45, 80), breaks = seq(45, 80, 15)) +
+  scale_y_continuous(limits = c(0, 8), breaks = seq(0, 8, 1)) +
+  labs(
+    x     = expression(paste(Si * O[2], " (wt%)")),
+    y     = expression(paste(Mg * O, " (wt%)")),
+    color = "Rock Unit",
+    title = expression(paste("Harker Diagram: ", Si * O[2],
+                             " vs ", Mg * O)),
+    subtitle = "(with fgg averaged)"
+  ) +
+  theme_bw()
+```
+
+```{r cao-plot-jg}
+#| class.source: "grade-src"
+#| class.output: "grade-out"
+#| class.message: "grade-msg"
+#| class.warning: "grade-warn"
+#| class.error: "grade-err"
+
+# Calcium oxide Harker diagram 
+
+# dropping my NA values
+df_Ca <- df |>
+  filter(!is.na(SiO2), !is.na(CaO), ! is.na(units))
+
+# creating fgg avg. in plot. 
+fgg_avg_CaO <- df_Ca |>
+  filter(units == "fgg") |>
+  summarize(
+    SiO2 = mean(SiO2, na.rm = TRUE),
+    CaO = mean(CaO, na.rm = TRUE),
+    units = "fgg (avg)"
+  )
+
+# combining fgg with rest of data 
+df_combined_Ca <- bind_rows(df_Ca, fgg_avg_CaO)
+
+# Creating points so I can draw a mixing line. 
+fgg_point <- df_combined_Ca |> filter(units == "fgg (avg)")
+di_point     <- df_combined_Ca |> filter(units == "di")     |> slice(1)
+di_amp_point <- df_combined_Ca |> filter(units == "di_amp") |> slice(1)
+
+# plotting my data for CaO Harker diagram. 
+CaO_Plot <- ggplot(df_combined_Ca, aes(x = SiO2, y = CaO,
+                                         color = units)) +
+  geom_segment(
+    x = fgg_point$SiO2, y = fgg_point$CaO,
+    xend = di_point$SiO2, yend = di_point$CaO, 
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_segment(
+    x = fgg_point$SiO2, y = fgg_point$CaO,
+    xend = di_amp_point$SiO2, yend = di_amp_point$CaO, 
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_point(data = df_Ca, size = 3) +
+  geom_smooth(
+    data = df_combined_Ca |>
+      filter(!units %in% c("fgg", "fgg (avg)", "int", "qtz_mon")),
+    aes(group = units),
+    method = "lm",
+    se = FALSE
+  ) +
+  geom_point(
+    data = fgg_point,
+    shape = 18,
+    size = 5,
+  ) +
+  scale_color_viridis_d(option = "D") +
+  scale_x_continuous(limits = c(45, 80), breaks = seq(45, 80, 15)) +
+  scale_y_continuous(limits = c(0, 12), breaks = seq(0, 12, 2)) +
+  labs(
+    x     = expression(paste(Si * O[2], " (wt%)")),
+    y     = expression(paste(Ca * O, " (wt%)")),
+    color = "Rock Unit",
+    title = expression(paste("Harker Diagram: ", Si * O[2],
+                             " vs ", Ca * O)),
+    subtitle = "(with fgg averaged)"
+  ) +
+  theme_bw()
+```
+
+```{r na2o-plot-jg}
+#| class.source: "grade-src"
+#| class.output: "grade-out"
+#| class.message: "grade-msg"
+#| class.warning: "grade-warn"
+#| class.error: "grade-err"
+
+# Sodium oxide Harker diagram 
+
+# dropping my NA values
+df_Na <- df |>
+  filter(!is.na(SiO2), !is.na(Na2O), ! is.na(units))
+
+# creating fgg avg. in plot. 
+fgg_avg_Na2O <- df_Na |>
+  filter(units == "fgg") |>
+  summarize(
+    SiO2 = mean(SiO2, na.rm = TRUE),
+    Na2O = mean(Na2O, na.rm = TRUE),
+    units = "fgg (avg)"
+  )
+
+# combining fgg with rest of data 
+df_combined_Na <- bind_rows(df_Na, fgg_avg_Na2O)
+
+# Creating points so I can draw a mixing line. 
+fgg_point <- df_combined_Na |> filter(units == "fgg (avg)")
+di_point     <- df_combined_Na |> filter(units == "di")     |> slice(1)
+di_amp_point <- df_combined_Na |> filter(units == "di_amp") |> slice(1)
+
+# plotting my data for Na2O Harker diagram. 
+Na2O_Plot <- ggplot(df_combined_Na, aes(x = SiO2, y = Na2O,
+                                         color = units)) +
+  geom_segment(
+    x = fgg_point$SiO2, y = fgg_point$Na2O,
+    xend = di_point$SiO2, yend = di_point$Na2O, 
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_segment(
+    x = fgg_point$SiO2, y = fgg_point$Na2O,
+    xend = di_amp_point$SiO2, yend = di_amp_point$Na2O, 
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_point(data = df_Na, size = 3) +
+  geom_smooth(
+    data = df_combined_Na |>
+      filter(!units %in% c("fgg", "fgg (avg)", "int", "qtz_mon")),
+    aes(group = units),
+    method = "lm",
+    se = FALSE
+  ) +
+  geom_point(
+    data = fgg_point,
+    shape = 18,
+    size = 5,
+  ) +
+  scale_color_viridis_d(option = "D") +
+  scale_x_continuous(limits = c(45, 80), breaks = seq(45, 80, 15)) +
+  scale_y_continuous(limits = c(0, 7), breaks = seq(0, 7, 1)) +
+  labs(
+    x     = expression(paste(Si * O[2], " (wt%)")),
+    y     = expression(paste(Na[2] * O, " (wt%)")),
+    color = "Rock Unit",
+    title = expression(paste("Harker Diagram: ", Si * O[2],
+                             " vs ", Na[2] * O)),
+    subtitle = "(with fgg averaged)"
+  ) +
+  theme_bw()
+```
+
+```{r k2o-plot-jg}
+#| class.source: "grade-src"
+#| class.output: "grade-out"
+#| class.message: "grade-msg"
+#| class.warning: "grade-warn"
+#| class.error: "grade-err"
+
+# Potassium oxide Harker diagram 
+
+# dropping my NA values
+df_K <- df |>
+  filter(!is.na(SiO2), !is.na(K2O), ! is.na(units))
+
+# creating fgg avg. in plot. 
+fgg_avg_K2O <- df_K |>
+  filter(units == "fgg") |>
+  summarize(
+    SiO2 = mean(SiO2, na.rm = TRUE),
+    K2O = mean(K2O, na.rm = TRUE),
+    units = "fgg (avg)"
+  )
+
+# combining fgg with rest of data 
+df_combined_K <- bind_rows(df_K, fgg_avg_K2O)
+
+# Creating points so I can draw a mixing line. 
+fgg_point <- df_combined_K |> filter(units == "fgg (avg)")
+di_point     <- df_combined_K |> filter(units == "di")     |> slice(1)
+di_amp_point <- df_combined_K |> filter(units == "di_amp") |> slice(1)
+
+# plotting my data for K2O Harker diagram. 
+K2O_Plot <- ggplot(df_combined_K, aes(x = SiO2, y = K2O,
+                                         color = units)) +
+  geom_segment(
+    x = fgg_point$SiO2, y = fgg_point$K2O,
+    xend = di_point$SiO2, yend = di_point$K2O, 
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_segment(
+    x = fgg_point$SiO2, y = fgg_point$K2O,
+    xend = di_amp_point$SiO2, yend = di_amp_point$K2O, 
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_point(data = df_K, size = 3) +
+  geom_smooth(
+    data = df_combined_K |>
+      filter(!units %in% c("fgg", "fgg (avg)", "int", "qtz_mon")),
+    aes(group = units),
+    method = "lm",
+    se = FALSE
+  ) +
+  geom_point(
+    data = fgg_point,
+    shape = 18,
+    size = 5,
+  ) +
+  scale_color_viridis_d(option = "D") +
+  scale_x_continuous(limits = c(45, 80), breaks = seq(45, 80, 15)) +
+  scale_y_continuous(limits = c(0, 9), breaks = seq(0, 9, 1)) +
+  labs(
+    x     = expression(paste(Si * O[2], " (wt%)")),
+    y     = expression(paste(K[2] * O, " (wt%)")),
+    color = "Rock Unit",
+    title = expression(paste("Harker Diagram: ", Si * O[2],
+                             " vs ", K[2] * O)),
+    subtitle = "(with fgg averaged)"
+  ) +
+  theme_bw()
+```
+
+```{r tio2-plot-jg}
+#| class.source: "grade-src"
+#| class.output: "grade-out"
+#| class.message: "grade-msg"
+#| class.warning: "grade-warn"
+#| class.error: "grade-err"
+
+# Titanium dioxide Harker diagram 
+
+# dropping my NA values
+df_Ti <- df |>
+  filter(!is.na(SiO2), !is.na(TiO2), ! is.na(units))
+
+# creating fgg avg. in plot. 
+fgg_avg_TiO2 <- df_Ti |>
+  filter(units == "fgg") |>
+  summarize(
+    SiO2 = mean(SiO2, na.rm = TRUE),
+    TiO2 = mean(TiO2, na.rm = TRUE),
+    units = "fgg (avg)"
+  )
+
+# combining fgg with rest of data 
+df_combined_Ti <- bind_rows(df_Ti, fgg_avg_TiO2)
+
+# Creating points so I can draw a mixing line. 
+fgg_point <- df_combined_Ti |> filter(units == "fgg (avg)")
+di_point     <- df_combined_Ti |> filter(units == "di")     |> slice(1)
+di_amp_point <- df_combined_Ti |> filter(units == "di_amp") |> slice(1)
+
+# plotting my data for TiO2 Harker diagram. 
+TiO2_Plot <- ggplot(df_combined_Ti, aes(x = SiO2, y = TiO2,
+                                         color = units)) +
+  geom_segment(
+    x = fgg_point$SiO2, y = fgg_point$TiO2,
+    xend = di_point$SiO2, yend = di_point$TiO2, 
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_segment(
+    x = fgg_point$SiO2, y = fgg_point$TiO2,
+    xend = di_amp_point$SiO2, yend = di_amp_point$TiO2, 
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_point(data = df_Ti, size = 3) +
+  geom_smooth(
+    data = df_combined_Ti |>
+      filter(!units %in% c("fgg", "fgg (avg)", "int", "qtz_mon")),
+    aes(group = units),
+    method = "lm",
+    se = FALSE
+  ) +
+  geom_point(
+    data = fgg_point,
+    shape = 18,
+    size = 5,
+  ) +
+  scale_color_viridis_d(option = "D") +
+  scale_x_continuous(limits = c(45, 80), breaks = seq(45, 80, 15)) +
+  scale_y_continuous(limits = c(0, 1.4), breaks = seq(0, 1.4, 0.2)) +
+  labs(
+    x     = expression(paste(Si * O[2], " (wt%)")),
+    y     = expression(paste(Ti * O[2], " (wt%)")),
+    color = "Rock Unit",
+    title = expression(paste("Harker Diagram: ", Si * O[2],
+                             " vs ", Ti * O[2])),
+    subtitle = "(with fgg averaged)"
+  ) +
+  theme_bw()
+```
+
+```{r p2o5-plot-jg}
+#| class.source: "grade-src"
+#| class.output: "grade-out"
+#| class.message: "grade-msg"
+#| class.warning: "grade-warn"
+#| class.error: "grade-err"
+
+# Phosphorus pentoxide Harker diagram 
+
+# dropping my NA values
+df_P <- df |>
+  filter(!is.na(SiO2), !is.na(P2O5), ! is.na(units))
+
+# creating fgg avg. in plot. 
+fgg_avg_P2O5 <- df_P |>
+  filter(units == "fgg") |>
+  summarize(
+    SiO2 = mean(SiO2, na.rm = TRUE),
+    P2O5 = mean(P2O5, na.rm = TRUE),
+    units = "fgg (avg)"
+  )
+
+# combining fgg with rest of data 
+df_combined_P <- bind_rows(df_P, fgg_avg_P2O5)
+
+# Creating points so I can draw a mixing line. 
+fgg_point <- df_combined_P |> filter(units == "fgg (avg)")
+di_point     <- df_combined_P |> filter(units == "di")     |> slice(1)
+di_amp_point <- df_combined_P |> filter(units == "di_amp") |> slice(1)
+
+# plotting my data for P2O5 Harker diagram. 
+P2O5_Plot <- ggplot(df_combined_P, aes(x = SiO2, y = P2O5,
+                                         color = units)) +
+  geom_segment(
+    x = fgg_point$SiO2, y = fgg_point$P2O5,
+    xend = di_point$SiO2, yend = di_point$P2O5, 
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_segment(
+    x = fgg_point$SiO2, y = fgg_point$P2O5,
+    xend = di_amp_point$SiO2, yend = di_amp_point$P2O5, 
+    color = "grey28", linewidth = 0.8
+  ) +
+  geom_point(data = df_P, size = 3) +
+  geom_smooth(
+    data = df_combined_P |>
+      filter(!units %in% c("fgg", "fgg (avg)", "int", "qtz_mon")),
+    aes(group = units),
+    method = "lm",
+    se = FALSE
+  ) +
+  geom_point(
+    data = fgg_point,
+    shape = 18,
+    size = 5,
+  ) +
+  scale_color_viridis_d(option = "D") +
+  scale_x_continuous(limits = c(45, 80), breaks = seq(45, 80, 15)) +
+  scale_y_continuous(limits = c(0, 0.4), breaks = seq(0, 0.4, 0.1)) +
+  labs(
+    x     = expression(paste(Si * O[2], " (wt%)")),
+    y     = expression(paste(P[2] * O[5], " (wt%)")),
+    color = "Rock Unit",
+    title = expression(paste("Harker Diagram: ", Si * O[2],
+                             " vs ", P[2] * O[5])),
+    subtitle = "(with fgg averaged)"
+  ) +
+  theme_bw()
+```
+
+```{r harker-plots}
+#| fig.height: 36
+#| class.source: "grade-src"
+#| class.output: "grade-out"
+#| class.message: "grade-msg"
+#| class.warning: "grade-warn"
+#| class.error: "grade-err"
+
+library(patchwork)
+
+Al2O3_Plot + Fe2O3_Plot + 
+MnO_Plot + MgO_Plot +
+CaO_Plot + 
+Na2O_Plot + K2O_Plot +
+TiO2_Plot +   
+P2O5_Plot +
+  plot_layout(ncol = 1)
+```
+:::
+
+### Results and Discussion
+
+My results are as expected with intermediate compositions somewhat falling in
+line with the linear trends made from my proposed end-member samples. In
+general, intermediate samples at least fall in between the proposed end-members
+in silica content. The graphs that fit the best when thinking about mixing are
+my Fe2O3 plot and P2O5 plot. The MgO plot is interesting because although none
+of the intermediate samples fall exactly on a mixing line, their slopes follow
+the same slope as the diorite mixing line. The TiO2 plot also shows
+intermediates existing in between both proposed mafic end-members, although not
+landing on one in particular. Overall, intermediates fit the diorite to
+fine-grained granite model better than the amphibole-rich diorite to
+fine-grained granite model.
+
+## Conclusions
+
+I learned that my Harker diagrams do not support mixing as much as I previously
+thought. When I first created bivariate diagrams for my samples, I made graphs
+within excel. My samples included all of the Spirit Mountain batholith samples,
+which increased the x-axis and y-axis ranges for every Harker diagram. I also
+created my linear trends between proposed end-members through drawing lines by
+hand in PowerPoint since I couldn't figure out how to create additional lines
+within excel. With this information in mind, creating exact lines within R and
+limiting my samples to only Hiko Canyon emphasizes how poorly my data fits into
+these linear trends, than my first version of graphs.
+
+I believe the Harker diagrams still support that mixing could occur as linear
+trends do support mixing, but it emphasizes the diversity and chaos of the
+magmatic system itself. For my next steps, I wish to figure out how to make the
+graphs more visually aesthetic so they are easier to observe. I would also like
+to figure out how to create a figure that has all of my Harkers in one place
+through R. I attempted to do that at the end of this project, but I couldn't
+quite get the font, legends, and point sizes correct for all of my graphs to
+still look how they did originally. Moving forward, there is room to do more
+fractionation modeling as well.
+
+
+
+::: {.comment}
+### Summary
+
+This is a very nice analysis. You worked hard to examine many aspects
+of your data. 
+
+With more time, you might write some R functions to automate the
+construction of Harker diagrams to make it easier to produce them
+without having to copy so many lines of code.
+
+As you discuss, R gives you a lot of flexibility to produce 
+sophisticated graphics, and allows you to do a lot of things you
+can't in Excel.
+
+There is a lot you can do with your interest in improving the 
+aesthetics of your diagrams to make them easier to interpret, and I
+would be happy to work with you and help you with this after the 
+semester, if you wish.
+
+**Grade:** A
+:::
