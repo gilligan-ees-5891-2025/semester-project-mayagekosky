@@ -5,7 +5,8 @@ Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce9
 ## Comments and grade:
 
 I have put comments into a version of this project called
-semester-project-jg-comments.qmd and semester-project-jg-comments.html.
+semester-project-jg-comments.qmd and
+[semester-project-jg-comments.html](semester-project-jg-comments.html).
 
 ## Instructions
 
